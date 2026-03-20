@@ -12,3 +12,8 @@ output "api_base_url" {
   value       = aws_apigatewayv2_stage.prod.invoke_url
   description = "API base URL for frontend app-config.js"
 }
+
+output "custom_domain" {
+  value       = var.domain_name
+  description = "Custom domain for Mentimeter website"
+}

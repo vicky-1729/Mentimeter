@@ -55,3 +55,13 @@ variable "lambda_memory_mb" {
   type        = number
   default     = 256
 }
+
+variable "route53_zone_id" {
+  description = "Route53 hosted zone ID for DNS"
+  type        = string
+}
+
+variable "domain_name" {
+  description = "Custom domain name (mentimeter.vsvicky.site)"
+  type        = string
+}
