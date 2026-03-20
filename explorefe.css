@@ -1,0 +1,337 @@
+#audii {
+    background: linear-gradient(135deg, #f0f4ff 0%, #f8f6ff 100%);
+    padding: 40px 24px;
+}
+
+#audi {
+    display: grid;
+    width: min(1100px, 92%);
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    margin: 0 auto;
+}
+
+#audi > div > h1 {
+    font-size: clamp(36px, 5vw, 52px);
+    color: #1e3a8a;
+    margin: 0;
+    line-height: 1.2;
+    font-weight: 700;
+}
+
+#audi > div > p {
+    font-size: 18px;
+    color: #6b7280;
+    margin: 12px 0 0;
+}
+
+#audi > div > button {
+    font-size: 16px;
+    padding: 11px 24px;
+    border-radius: 10px;
+    border: none;
+    color: #ffffff;
+    background-color: #4f46e5;
+    cursor: pointer;
+    font-weight: 700;
+    margin-top: 16px;
+    transition: background-color 0.2s ease;
+}
+
+#audi > div > button:hover {
+    background-color: #4338ca;
+}
+
+#feature > h1 {
+    padding-top: 32px;
+    text-align: center;
+    font-size: clamp(32px, 5vw, 48px);
+    color: #1e3a8a;
+    margin: 0;
+    font-weight: 700;
+}
+
+#feature > p {
+    text-align: center;
+    font-size: 18px;
+    color: #6b7280;
+    margin: 12px 0 0;
+    width: min(900px, 100%);
+}
+
+#circle {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    width: min(1100px, 92%);
+    gap: 24px;
+    margin: 48px auto 0;
+}
+
+#circle > div {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    transition: box-shadow 0.2s ease;
+}
+
+#circle > div:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+#circle > div > img {
+    width: 60px;
+    height: 60px;
+}
+
+#circle > div > h1 {
+    color: #111827;
+    text-align: center;
+    font-size: 18px;
+    margin: 14px 0 0;
+    font-weight: 600;
+}
+
+#circle > div > p {
+    text-align: center;
+    font-size: 15px;
+    color: #6b7280;
+    margin: 8px 0 0;
+}
+
+#circle > div > p + p {
+    color: #4f46e5;
+    font-weight: 600;
+    margin-top: 8px;
+}
+
+#mid {
+    margin: 48px auto 0;
+    width: 100%;
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    text-align: center;
+    padding: 48px 24px;
+}
+
+#mid > p {
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+}
+
+#mid > h1 {
+    font-size: clamp(32px, 5vw, 48px);
+    color: #ffffff;
+    margin: 16px 0 0;
+    font-weight: 700;
+}
+
+#mid > h1 + p {
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.6;
+    margin: 12px auto 0;
+    width: min(900px, 100%);
+}
+
+#mid > button {
+    margin-top: 24px;
+    border-radius: 10px;
+    padding: 11px 24px;
+    font-size: 15px;
+    background-color: #ffffff;
+    color: #4f46e5;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+    transition: all 0.2s ease;
+}
+
+#mid > button:hover {
+    background-color: #f3f0ff;
+}
+
+#mid > img {
+    width: 100%;
+    margin-top: 32px;
+    border-radius: 12px;
+}
+
+#des {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: min(1100px, 92%);
+    margin: 0 auto;
+    gap: 48px;
+    padding-top: 48px;
+}
+
+#des > div {
+    text-align: left;
+}
+
+#des > div > img {
+    width: 100%;
+    border-radius: 12px;
+}
+
+#des > div > h1 {
+    font-size: clamp(28px, 4vw, 40px);
+    color: #1e3a8a;
+    padding-top: 24px;
+    margin: 0;
+    font-weight: 700;
+}
+
+#des > div > p {
+    font-size: 16px;
+    color: #6b7280;
+    margin: 12px 0 0;
+    line-height: 1.6;
+}
+
+ul {
+    font-size: 16px;
+    color: #4b5563;
+    line-height: 1.8;
+    margin: 16px 0;
+}
+
+.span {
+    text-decoration: underline;
+    color: #4f46e5;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+#bottom {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: min(1100px, 92%);
+    gap: 48px;
+    margin: 48px auto 0;
+}
+
+#bottom > div {
+    text-align: left;
+}
+
+#bottom > div > img {
+    width: 100%;
+    border-radius: 12px;
+}
+
+#bottom > div > h1 {
+    font-size: clamp(28px, 4vw, 40px);
+    color: #1e3a8a;
+    margin: 24px 0 0;
+    font-weight: 700;
+}
+
+#bottom > div > p {
+    font-size: 16px;
+    color: #6b7280;
+    margin: 12px 0 0;
+    line-height: 1.6;
+}
+
+#bottom > div > button {
+    font-size: 15px;
+    margin-top: 16px;
+    padding: 11px 16px;
+    border-radius: 10px;
+    color: #4f46e5;
+    border: 2px solid #4f46e5;
+    background: #ffffff;
+    cursor: pointer;
+    font-weight: 700;
+    transition: all 0.2s ease;
+}
+
+#bottom > div > button:hover {
+    color: #ffffff;
+    background-color: #4f46e5;
+}
+
+#Break {
+    margin: 0 auto;
+    margin-top: 64px;
+    text-align: center;
+    padding: 48px 24px;
+    background: linear-gradient(135deg, #f3f0ff 0%, #faf8ff 100%);
+}
+
+#Break > h1 {
+    font-size: clamp(32px, 5vw, 48px);
+    color: #1e3a8a;
+    margin: 0;
+    font-weight: 700;
+}
+
+#Break > h3 {
+    font-size: 18px;
+    margin: 12px 0 0;
+    color: #6b7280;
+    width: min(900px, 100%);
+}
+
+#Break > button {
+    margin-top: 24px;
+    padding: 11px 24px;
+    font-size: 15px;
+    color: #4f46e5;
+    border: 2px solid #4f46e5;
+    border-radius: 10px;
+    background: #ffffff;
+    cursor: pointer;
+    font-weight: 700;
+    transition: all 0.2s ease;
+}
+
+#Break > button:hover {
+    color: #ffffff;
+    background-color: #4f46e5;
+}
+
+#Break > img {
+    margin-top: 32px;
+    width: 100%;
+    border-radius: 12px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    #audi {
+        grid-template-columns: 1fr;
+        gap: 32px;
+    }
+    
+    #circle {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-top: 40px;
+    }
+    
+    #mid {
+        padding: 40px 16px;
+        margin-top: 40px;
+    }
+    
+    #des {
+        grid-template-columns: 1fr;
+        gap: 32px;
+        padding-top: 40px;
+    }
+    
+    #bottom {
+        grid-template-columns: 1fr;
+        gap: 32px;
+        margin-top: 40px;
+    }
+    
+    #Break {
+        margin-top: 40px;
+        padding: 40px 16px;
+    }
+}
