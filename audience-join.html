@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join Presentation - Mentimeter</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container audience-join">
+        <div class="join-card">
+            <div class="logo-center">Mentimeter</div>
+            
+            <h1>Join a Presentation</h1>
+            <p>Enter the session code or use the direct link provided by the presenter</p>
+
+            <form id="join-form">
+                <div class="form-group">
+                    <label for="session-code">Session Code</label>
+                    <input type="text" id="session-code" placeholder="e.g., ABC123" maxlength="6" autocomplete="off">
+                </div>
+
+                <button type="submit" class="btn-primary btn-large">Join Session</button>
+            </form>
+
+            <div class="divider">or</div>
+
+            <p class="info-text">Already have a link? Paste it in your browser's address bar</p>
+        </div>
+    </div>
+
+    <script src="app-config.js"></script>
+    <script>
+        document.getElementById('join-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const code = document.getElementById('session-code').value.toUpperCase();
+
+            if (code.length !== 6) {
+                alert('Please enter a valid 6-character code');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/sessions/join`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ session_code: code })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    localStorage.setItem('session_id', data.session_id);
+                    localStorage.setItem('participant_id', data.participant_id);
+                    window.location.href = 'audience-slide.html';
+                } else {
+                    alert('Invalid session code. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error joining session:', error);
+                alert('Error joining session');
+            }
+        });
+    </script>
+</body>
+</html>

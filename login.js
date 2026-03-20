@@ -1,43 +1,48 @@
 
-const form = document.querySelector("form");
-const emailInput = document.querySelector("#email");
-const passwordInput = document.querySelector("#password");
-const signUpLink = document.querySelector("#sp");
-const statusText = document.querySelector("#status");
-
-function setStatus(message, isError) {
-    statusText.textContent = message;
-    statusText.style.color = isError ? "#b00020" : "#1b5e20";
+// Check if already logged in
+if (localStorage.getItem('auth_token')) {
+    window.location.href = 'dashboard.html';
 }
 
-if (signUpLink) {
-    signUpLink.addEventListener("click", function () {
-        window.location.href = "signup.html";
-    });
-}
+// Login handler
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-form.addEventListener("submit", async function loginCall(event) {
-    event.preventDefault();
-    setStatus("", false);
-
-    const email = emailInput.value.trim().toLowerCase();
-    const password = passwordInput.value.trim();
-
-    if (!email || !password) {
-        setStatus("Please enter email and password.", true);
-        return;
-    }
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
 
     try {
-        const response = await AuthService.login({ email, password });
-        localStorage.setItem("authToken", response.token);
-        localStorage.setItem("user", JSON.stringify(response.user));
-        setStatus("Login successful. Redirecting...", false);
-        setTimeout(function () {
-            window.location.href = "navbar.html";
-        }, 500);
+        const response = await fetch(`${API_BASE_URL}/auth/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email, password })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            localStorage.setItem('auth_token', data.token);
+            localStorage.setItem('user_email', email);
+            window.location.href = 'dashboard.html';
+        } else {
+            alert('Invalid email or password');
+        }
     } catch (error) {
-        setStatus(error.message || "Login failed.", true);
+        console.error('Login error:', error);
+        alert('Error during login');
     }
+});
+
+// Google OAuth
+document.getElementById('google').addEventListener('click', () => {
+    // Redirect to Google OAuth flow
+    window.location.href = `${API_BASE_URL}/auth/google`;
+});
+
+// Outlook OAuth
+document.getElementById('outlook').addEventListener('click', () => {
+    // Redirect to Outlook OAuth flow
+    window.location.href = `${API_BASE_URL}/auth/outlook`;
 });
 

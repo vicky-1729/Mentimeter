@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Present - Mentimeter</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="presenter-container">
+        <div class="presenter-header">
+            <h2 id="presentation-title"></h2>
+            <div class="session-info">
+                <div id="session-code" class="session-code">Code: <strong id="code-value"></strong> <button onclick="copyCode()" class="btn-small">Copy</button></div>
+                <div id="audience-count">Participants: <strong id="count-value">0</strong></div>
+            </div>
+            <div class="presenter-controls">
+                <button id="start-session-btn" class="btn-primary">Start Session</button>
+                <button id="end-session-btn" class="btn-danger" style="display: none;">End Session</button>
+            </div>
+        </div>
+
+        <div class="presenter-content">
+            <div class="slide-display">
+                <div id="current-slide" class="current-slide">
+                    <p>Select a slide to display</p>
+                </div>
+            </div>
+
+            <div class="presenter-panel">
+                <div class="slides-navigation">
+                    <h3>Slides</h3>
+                    <div id="slides-list"></div>
+                </div>
+
+                <div class="live-results">
+                    <h3>Live Results</h3>
+                    <div id="results-display"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app-config.js"></script>
+    <script>
+        let presentationId = new URLSearchParams(window.location.search).get('id');
+        let presentation = null;
+        let sessionId = null;
+        let currentSlide = 0;
+        let isSessionActive = false;
+        let pollInterval = null;
+
+        async function initPresenter() {
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            await loadPresentation();
+        }
+
+        async function loadPresentation() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/presentations/${presentationId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    presentation = await response.json();
+                    document.getElementById('presentation-title').textContent = presentation.title;
+                    renderSlidesList();
+                    if (presentation.slides.length > 0) {
+                        displaySlide(0);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading presentation:', error);
+            }
+        }
+
+        function renderSlidesList() {
+            const container = document.getElementById('slides-list');
+            container.innerHTML = (presentation.slides || []).map((slide, idx) => `
+                <div class="slide-nav-item ${idx === currentSlide ? 'active' : ''}" onclick="displaySlide(${idx})">
+                    <div class="slide-num">${idx + 1}</div>
+                    <div class="slide-label">${slide.question.substring(0, 30)}...</div>
+                </div>
+            `).join('');
+        }
+
+        function displaySlide(index) {
+            currentSlide = index;
+            const slide = presentation.slides[index];
+            
+            const slideHtml = `
+                <div class="slide-content">
+                    <h2>${slide.question}</h2>
+                    ${slide.type !== 'open_question' ? `
+                        <div class="slide-options">
+                            ${(slide.options || []).map(opt => `<div class="option-display">${opt}</div>`).join('')}
+                        </div>
+                    ` : '<p>Awaiting responses...</p>'}
+                </div>
+            `;
+            
+            document.getElementById('current-slide').innerHTML = slideHtml;
+            renderSlidesList();
+            
+            if (isSessionActive) {
+                loadResults();
+            }
+        }
+
+        async function startSession() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/sessions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                    },
+                    body: JSON.stringify({
+                        presentation_id: presentationId,
+                        current_slide: 0
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    sessionId = data.session_id;
+                    const code = data.session_code;
+                    
+                    document.getElementById('code-value').textContent = code;
+                    document.getElementById('start-session-btn').style.display = 'none';
+                    document.getElementById('end-session-btn').style.display = 'inline-block';
+                    
+                    isSessionActive = true;
+                    
+                    // Start polling for responses
+                    pollInterval = setInterval(pollResponses, 2000);
+                }
+            } catch (error) {
+                console.error('Error starting session:', error);
+            }
+        }
+
+        async function loadResults() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/sessions/${sessionId}/results?slide=${currentSlide}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const results = await response.json();
+                    renderResults(results);
+                }
+            } catch (error) {
+                console.error('Error loading results:', error);
+            }
+        }
+
+        function renderResults(results) {
+            const container = document.getElementById('results-display');
+            const slide = presentation.slides[currentSlide];
+            
+            if (slide.type === 'open_question') {
+                container.innerHTML = `
+                    <div class="results-open">
+                        <h4>Responses (${results.total_responses || 0})</h4>
+                        ${(results.responses || []).slice(0, 5).map(r => `
+                            <div class="response-item">"${r}"</div>
+                        `).join('')}
+                    </div>
+                `;
+            } else {
+                const total = results.total_responses || 0;
+                container.innerHTML = `
+                    <div class="results-chart">
+                        ${slide.options.map((opt, idx) => {
+                            const count = results.counts?.[idx] || 0;
+                            const percentage = total > 0 ? ((count / total) * 100).toFixed(0) : 0;
+                            return `
+                                <div class="result-bar">
+                                    <div class="bar-label">${opt}</div>
+                                    <div class="bar-container">
+                                        <div class="bar-fill" style="width: ${percentage}%">
+                                            <span class="bar-text">${count} (${percentage}%)</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }
+        }
+
+        async function pollResponses() {
+            await loadResults();
+        }
+
+        async function endSession() {
+            try {
+                await fetch(`${API_BASE_URL}/sessions/${sessionId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                    }
+                });
+
+                isSessionActive = false;
+                clearInterval(pollInterval);
+                document.getElementById('start-session-btn').style.display = 'inline-block';
+                document.getElementById('end-session-btn').style.display = 'none';
+                alert('Session ended');
+            } catch (error) {
+                console.error('Error ending session:', error);
+            }
+        }
+
+        function copyCode() {
+            const code = document.getElementById('code-value').textContent;
+            navigator.clipboard.writeText(code);
+            alert('Code copied!');
+        }
+
+        document.getElementById('start-session-btn').addEventListener('click', startSession);
+        document.getElementById('end-session-btn').addEventListener('click', endSession);
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' && currentSlide < presentation.slides.length - 1) {
+                displaySlide(currentSlide + 1);
+            } else if (e.key === 'ArrowLeft' && currentSlide > 0) {
+                displaySlide(currentSlide - 1);
+            }
+        });
+
+        initPresenter();
+    </script>
+</body>
+</html>

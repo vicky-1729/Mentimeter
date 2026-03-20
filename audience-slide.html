@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Answer Question - Mentimeter</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="audience-container">
+        <div class="audience-header">
+            <div class="logo">Mentimeter</div>
+            <button id="leave-btn" class="btn-danger">Leave Session</button>
+        </div>
+
+        <div class="audience-content">
+            <div class="question-card">
+                <div class="question-number">
+                    Question <span id="slide-number">1</span> of <span id="total-slides">0</span>
+                </div>
+                
+                <h2 id="question-text"></h2>
+
+                <div id="answer-options" class="answer-options">
+                    <!-- Options will be rendered here -->
+                </div>
+
+                <div id="answer-open" class="answer-open" style="display: none;">
+                    <textarea id="open-answer" placeholder="Type your answer here..." rows="4"></textarea>
+                    <button onclick="submitOpenAnswer()" class="btn-primary">Submit Answer</button>
+                </div>
+
+                <div id="answer-submitted" class="answer-submitted" style="display: none;">
+                    <div class="checkmark">✓</div>
+                    <p>Your answer has been submitted!</p>
+                    <p class="subtle">Waiting for next question...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app-config.js"></script>
+    <script>
+        let sessionId = localStorage.getItem('session_id');
+        let participantId = localStorage.getItem('participant_id');
+        let currentSlide = null;
+        let slideIndex = 0;
+        let totalSlides = 0;
+        let hasAnswered = false;
+        let pollInterval = null;
+
+        async function initAudience() {
+            if (!sessionId || !participantId) {
+                window.location.href = 'audience-join.html';
+                return;
+            }
+
+            await loadCurrentSlide();
+            
+            // Poll for slide updates
+            pollInterval = setInterval(loadCurrentSlide, 2000);
+        }
+
+        async function loadCurrentSlide() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/sessions/${sessionId}/current-slide`, {
+                    headers: {
+                        'X-Participant-Id': participantId
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentSlide = data;
+                    slideIndex = data.slide_index || 0;
+                    totalSlides = data.total_slides || 0;
+                    
+                    displaySlide();
+                    hasAnswered = false;
+                    document.getElementById('answer-submitted').style.display = 'none';
+                } else if (response.status === 404) {
+                    document.getElementById('question-card').innerHTML = '<p>Session has ended</p>';
+                }
+            } catch (error) {
+                console.error('Error loading slide:', error);
+            }
+        }
+
+        function displaySlide() {
+            document.getElementById('slide-number').textContent = slideIndex + 1;
+            document.getElementById('total-slides').textContent = totalSlides;
+            document.getElementById('question-text').textContent = currentSlide.question;
+
+            if (currentSlide.type === 'open_question') {
+                displayOpenQuestion();
+            } else {
+                displayMultipleChoice();
+            }
+        }
+
+        function displayMultipleChoice() {
+            const container = document.getElementById('answer-options');
+            document.getElementById('answer-open').style.display = 'none';
+            
+            container.innerHTML = (currentSlide.options || []).map((option, idx) => `
+                <button class="option-btn" onclick="submitAnswer(${idx})">${option}</button>
+            `).join('');
+        }
+
+        function displayOpenQuestion() {
+            document.getElementById('answer-options').innerHTML = '';
+            document.getElementById('answer-open').style.display = 'block';
+        }
+
+        async function submitAnswer(optionIndex) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/sessions/${sessionId}/answer`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Participant-Id': participantId
+                    },
+                    body: JSON.stringify({
+                        slide_index: slideIndex,
+                        answer: optionIndex,
+                        answer_text: currentSlide.options[optionIndex]
+                    })
+                });
+
+                if (response.ok) {
+                    hasAnswered = true;
+                    document.getElementById('answer-options').innerHTML = '';
+                    document.getElementById('answer-submitted').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error submitting answer:', error);
+            }
+        }
+
+        async function submitOpenAnswer() {
+            const answer = document.getElementById('open-answer').value.trim();
+            
+            if (!answer) {
+                alert('Please enter an answer');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/sessions/${sessionId}/answer`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Participant-Id': participantId
+                    },
+                    body: JSON.stringify({
+                        slide_index: slideIndex,
+                        answer_text: answer
+                    })
+                });
+
+                if (response.ok) {
+                    hasAnswered = true;
+                    document.getElementById('answer-open').style.display = 'none';
+                    document.getElementById('answer-submitted').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error submitting answer:', error);
+            }
+        }
+
+        document.getElementById('leave-btn').addEventListener('click', () => {
+            clearInterval(pollInterval);
+            localStorage.removeItem('session_id');
+            localStorage.removeItem('participant_id');
+            window.location.href = 'audience-join.html';
+        });
+
+        initAudience();
+    </script>
+</body>
+</html>

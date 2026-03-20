@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Presentation - Mentimeter</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-container">
+            <div class="logo">Mentimeter</div>
+            <a href="dashboard.html" class="btn-back">← Back to Dashboard</a>
+        </div>
+    </div>
+
+    <div class="editor-container">
+        <div class="editor-panel">
+            <div class="editor-header">
+                <h2 id="presentation-title"></h2>
+                <a href="presenter.html?id=" id="present-btn" class="btn-primary">Go Live</a>
+            </div>
+
+            <div class="slides-list">
+                <h3>Slides</h3>
+                <div id="slides-container" class="slides-container"></div>
+                <button id="add-slide-btn" class="btn-secondary">+ Add Slide</button>
+            </div>
+        </div>
+
+        <div class="editor-main">
+            <div id="slide-editor" class="slide-editor">
+                <p>Select a slide to edit</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="app-config.js"></script>
+    <script>
+        let presentationId = new URLSearchParams(window.location.search).get('id');
+        let presentation = null;
+        let currentSlideIndex = 0;
+
+        async function initEditor() {
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            await loadPresentation();
+        }
+
+        async function loadPresentation() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/presentations/${presentationId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    presentation = await response.json();
+                    document.getElementById('presentation-title').textContent = presentation.title;
+                    document.getElementById('present-btn').href = `presenter.html?id=${presentationId}`;
+                    renderSlidesList();
+                }
+            } catch (error) {
+                console.error('Error loading presentation:', error);
+            }
+        }
+
+        function renderSlidesList() {
+            const container = document.getElementById('slides-container');
+            container.innerHTML = (presentation.slides || []).map((slide, idx) => `
+                <div class="slide-item ${idx === currentSlideIndex ? 'active' : ''}" onclick="editSlide(${idx})">
+                    <div class="slide-number">${idx + 1}</div>
+                    <div class="slide-title">${slide.question || 'Untitled'}</div>
+                </div>
+            `).join('');
+        }
+
+        function editSlide(index) {
+            currentSlideIndex = index;
+            const slide = presentation.slides[index];
+            renderSlideEditor(slide, index);
+            renderSlidesList();
+        }
+
+        function renderSlideEditor(slide, index) {
+            const editor = document.getElementById('slide-editor');
+            
+            let optionsHtml = '';
+            if (slide.type !== 'open_question') {
+                optionsHtml = `
+                    <div class="form-group">
+                        <label>Options</label>
+                        <div id="options-list">
+                            ${(slide.options || []).map((opt, i) => `
+                                <div class="option-item">
+                                    <input type="text" value="${opt}" onchange="updateOption(${index}, ${i}, this.value)">
+                                    <button type="button" onclick="removeOption(${index}, ${i})">Remove</button>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <button type="button" onclick="addOption(${index})" class="btn-secondary">+ Add Option</button>
+                    </div>
+                `;
+            }
+
+            editor.innerHTML = `
+                <div class="form-card">
+                    <h3>Edit Slide ${index + 1}</h3>
+                    
+                    <div class="form-group">
+                        <label for="slide-type">Question Type</label>
+                        <select id="slide-type" onchange="changeSlideType(${index}, this.value)">
+                            <option value="multiple_choice" ${slide.type === 'multiple_choice' ? 'selected' : ''}>Multiple Choice</option>
+                            <option value="true_false" ${slide.type === 'true_false' ? 'selected' : ''}>True/False</option>
+                            <option value="open_question" ${slide.type === 'open_question' ? 'selected' : ''}>Open Q&A</option>
+                            <option value="rating_scale" ${slide.type === 'rating_scale' ? 'selected' : ''}>Rating Scale</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="slide-question">Question *</label>
+                        <input type="text" id="slide-question" value="${slide.question || ''}" onchange="updateQuestion(${index}, this.value)" placeholder="Enter your question...">
+                    </div>
+
+                    ${optionsHtml}
+
+                    <div class="form-actions">
+                        <button type="button" onclick="removeSlide(${index})" class="btn-danger">Delete Slide</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateQuestion(index, value) {
+            presentation.slides[index].question = value;
+            savePresentation();
+        }
+
+        function updateOption(slideIdx, optIdx, value) {
+            presentation.slides[slideIdx].options[optIdx] = value;
+            savePresentation();
+        }
+
+        function removeOption(slideIdx, optIdx) {
+            presentation.slides[slideIdx].options.splice(optIdx, 1);
+            editSlide(slideIdx);
+            savePresentation();
+        }
+
+        function addOption(slideIdx) {
+            if (!presentation.slides[slideIdx].options) {
+                presentation.slides[slideIdx].options = [];
+            }
+            presentation.slides[slideIdx].options.push('New option');
+            editSlide(slideIdx);
+        }
+
+        function changeSlideType(index, type) {
+            presentation.slides[index].type = type;
+            if (type === 'true_false') {
+                presentation.slides[index].options = ['True', 'False'];
+            } else if (type === 'rating_scale') {
+                presentation.slides[index].options = ['1', '2', '3', '4', '5'];
+            } else if (type === 'multiple_choice' && !presentation.slides[index].options) {
+                presentation.slides[index].options = ['Option 1', 'Option 2'];
+            }
+            editSlide(index);
+            savePresentation();
+        }
+
+        function removeSlide(index) {
+            if (confirm('Delete this slide?')) {
+                presentation.slides.splice(index, 1);
+                currentSlideIndex = Math.max(0, index - 1);
+                renderSlidesList();
+                if (presentation.slides.length > 0) {
+                    editSlide(currentSlideIndex);
+                } else {
+                    document.getElementById('slide-editor').innerHTML = '<p>No slides. Add one to get started.</p>';
+                }
+                savePresentation();
+            }
+        }
+
+        async function savePresentation() {
+            try {
+                await fetch(`${API_BASE_URL}/presentations/${presentationId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                    },
+                    body: JSON.stringify(presentation)
+                });
+            } catch (error) {
+                console.error('Error saving presentation:', error);
+            }
+        }
+
+        document.getElementById('add-slide-btn').addEventListener('click', () => {
+            const newSlide = {
+                type: 'multiple_choice',
+                question: 'New Question',
+                options: ['Option 1', 'Option 2']
+            };
+            presentation.slides.push(newSlide);
+            currentSlideIndex = presentation.slides.length - 1;
+            editSlide(currentSlideIndex);
+            savePresentation();
+        });
+
+        initEditor();
+    </script>
+</body>
+</html>
